@@ -91,7 +91,7 @@ class Stmt:
         self.name = name
         self.value = value
         if not isinstance(self.name,Name):
-            raise GroveError("CALC: expected expression but recieved " + str(type(self.name)))
+            raise GroveError("GROVE: expected expression but recieved " + str(type(self.name)))
             
         
     def eval(self):
