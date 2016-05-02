@@ -65,9 +65,13 @@ def parse_tokens(tokens):
         (varname,tokens) = parse_tokens(tokens[1:]) # get the import name
         return (Stmt(start,varname,child),tokens)
     elif start == "call":
-        
+        expect(tokens[1], "(")
+        (name1,tokens) = parse_tokens(tokens[2:])
+        check(len(tokens) > 1)
     else:
         #string literal
+        return (StringLiteral(tokens))
+        
         
         
         

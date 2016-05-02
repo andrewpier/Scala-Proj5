@@ -86,29 +86,28 @@ class Num(Expr):
     
 class Stmt:
     # I think that we should use the *args here in order to be able to take 0, 1, 2 names
-    def __init__(self, keyword, name, value):
-        self.keyword = keyword
-        self.name = name
-        self.value = value
-        if not isinstance(self.name,Name):
-            raise GroveError("GROVE: expected expression but recieved " + str(type(self.name)))
-            
+    def __init__(self, *args):
+        self.keyword = args[0]
+        self.args = args[1:]   
         
     def eval(self):
         if(self.keyword == "quit" || self.keyword == "exit"):
             sys.exit()
         elif self.keyword == "import":
-            module = importlib.import_module(self.value)
-            #call = getattr(mod,)
-            #call()
+            #put it into globals
+            mod = importlib.import_module(self.args[0])
+            setattr(globals(),mod, )
+            
         elif self.keyword == "set":
-            if isinstance(self.value, Expr):
-                var_table[self.name.getName()] = self.value.eval()
+            if(self.args.count >= 3):
+                #var_table[self.args[0].getName()] = new args[1].eval()
+                #we need to be able to . another name 
+                myClass = globals()[args[1]]()
+                myObj = getattr(myClass,self.args[2])
+                var_table[self.args[0].getName()] = myObj
             else:
-                #is they the value is expressions
-                
-                
-                
+                myClass = globals()[args[1]]()
+                var_table[self.args[0].getName()] = myClass
         else:
             raise GroveError("GROVE: invalid keyword " + str(self.keyword))
                                                      
