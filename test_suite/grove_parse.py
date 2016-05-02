@@ -64,8 +64,6 @@ def parse_tokens(tokens):
     elif start == "set":
         # "set" <Name> "=" "new" <Name>      | "set" <Name> "=" "new" <Name>"."<Name>
         (varName,tokens) = parse_tokens(tokens[1:])
-        #print("varr name" + varName.getName())
-        
         check(len(tokens) > 1)
         expect(tokens[0], "=")
         if not tokens[1] == "new":
@@ -82,7 +80,7 @@ def parse_tokens(tokens):
             return (Stmt("new", varName, objName), tokens)
         
     elif start == "quit" or start == "exit":
-        return (Stmt(start,"quit",0),tokens[1:])
+        return (Stmt(start,Name("quit"),0),tokens[1:])
     
     elif start == "import":
         (varname,tokens) = parse_tokens(tokens[1:]) # get the import name

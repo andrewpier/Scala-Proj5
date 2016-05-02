@@ -105,26 +105,22 @@ class Num(Expr):
     
 class Stmt:
     # I think that we should use the *args here in order to be able to take 0, 1, 2 names
-    def __init__(self,keyword,*args):
-        print(keyword)
-        print(" asasd")
-        print(args)
-        self.keyword = keyword
-        self.args = args
-        #if not isinstance(self.args[0], Name):
-         #   raise GroveError("GROVE: expected expression but recieved " + str(type(self.args[0])))
+    def __init__(self, keyword, name, value):
+        self.keyword = args[0]
+        self.args = args[1:]
+        if not isinstance(self.args[0], Name):
+            raise GroveError("GROVE: expected expression but recieved " + str(type(self.args[0])))
         
             
         
     def eval(self):
-        #print(self.args[0])
-        #print(self.keyword.getName())
         if(self.keyword == "quit" or self.keyword == "exit"):
             sys.exit()
         elif self.keyword == "import":
-            module = importlib.import_module(self.args[0].getName())
-            globals()[self.args[0].getName()] = module
-            
+            module = importlib.import_module(self.args[0])
+            globals()[keyword] = module
+            #call = getattr(mod,)
+            #call()
         elif self.keyword == "set":
             if isinstance(self.args[1], Expr):
                 var_table[self.args[0].getName()] = self.args[1].eval()
