@@ -11,6 +11,7 @@ def expect(token, expected):
         If not, throws a ValueError with explanatory message """
     if token != expected:
         check(False, "Expected '" + expected + "' but found '" + token + "'")
+        
 def is_expr(x):
     if not isinstance(x, Expr):
         check(False, "Expected expression but found " + str(type(x)))        
@@ -47,7 +48,9 @@ def parse_tokens(tokens):
     # TODO: parse the next part of the expression
     if is_int(start):
         return(Num(int(start)),tokens[1:])
+    
     elif start in ["+"]:
+        #"+" "(" <Expr> ")" "(" <Expr> ")" 
         expect(tokens[1],"(")
         (child1,tokens) = parse_tokens(tokens[2:])
         check(len(tokens) > 1)
@@ -57,63 +60,54 @@ def parse_tokens(tokens):
         check(len(tokens) > 0)
         expect(tokens[0],")")
         return (Addition(child1,child2),tokens[1:])
+    
     elif start == "set":
+        # "set" <Name> "=" "new" <Name>      | "set" <Name> "=" "new" <Name>"."<Name>
+        (varName,tokens) = parse_tokens(tokens[1:])
+        check(len(tokens) > 1)
+        expect(tokens[0], "=")
+        if not tokens[1] == "new":
+            (esprName,tokens) = parse_tokens(tokens[2:])
+            check(len(tokens) > 1)
+            return (Stmt(varName, esprName), tokens)
+        expect(tokens[1],"new")
+        (objName,tokens) = parse_tokens(tokens[2:])
+        if tokens[0] == ".":
+            (methodName,tokens) = parse_tokens(tokens[1:])
+            check(len(tokens) > 1)
+            return (Stmt("new", varName, objName, methodName), tokens)
+        else:
+            return (Stmt("new", varName, objName), tokens)
         
-    elif start == "quit" or start == "exit";
-        return (Stmt(start,Name("quit"),0),tokens)
+    elif start == "quit" or start == "exit":
+        return (Stmt(start,Name("quit"),0),tokens[1:])
+    
     elif start == "import":
         (varname,tokens) = parse_tokens(tokens[1:]) # get the import name
-        return (Stmt(start,varname,child),tokens)
+        return (Stmt(start,varname),tokens) # made a change here
+    
     elif start == "call":
-        expect(tokens[1], "(")
-        (name1,tokens) = parse_tokens(tokens[2:])
+        #"call" "(" <Name> <Name> <Expr>* ")" 
+        expect(tokens[1],"(")
+        (child1,tokens) = parse_tokens(tokens[2:])
         check(len(tokens) > 1)
+        (child2,tokens) = parse_tokens(tokens)
+        check(len(tokens) > 1)
+        
+        myArgs = list()
+        
+        while tokens[1] != ")":
+            (child1,tokens) = parse_tokens(tokens[2:])
+            if not isinstance(child1, Expr):
+                raise GroveError("Andrew Sucks!")
+            myArgs.append(child1)
+        
+        expect(tokens[1],")")
+   
+        return()
     else:
-        #string literal
-        return (StringLiteral(tokens))
+        if start == "\"":
+            return(StringLiteral(tokens[1],tokens[3:])) # return string literal
+        else:
+            return(Name(start), tokens[1:])#return name
         
-        
-        
-        
-
-# Testing code
-if __name__ == "__main__":
-    # First try some things that should work
-    cmds = [" + ( 3 ) ( 12 ) ",
-            " - ( 5 ) ( 2 )",
-            " + ( 15 ) ( - ( 3 ) ( 8 ) ) ",
-            "set foo = 38",
-            "foo",
-            "set bar = + ( 22 ) ( foo )",
-            "bar"]
-            
-    answers = [ 15,
-                3,
-                10,
-                None,
-                38,
-                None,
-                60 ]
-    
-    for i in range(0, len(cmds)):
-        root = parse(cmds[i])
-        result = root.eval()
-        check(result == answers[i], "TEST FAILED for cmd " + cmds[i] + 
-            ";  result was " + str(result) + " instead of " + str(answers[i]))
-    
-    # Testing for all errors is beyond our scope,
-    # but we check a few
-    bad_cmds = [ " ",
-                 "not-alpha",
-                 " + ( nope ) ( 3 ) ",
-                 " 3 + 3 ",
-                 " + ( 5 ) ( 4 ) foo ",
-                 " + ( set x = 6 ) ( 7 )" ]
-        
-    for c in bad_cmds:
-        try:
-            root = parse(c)
-            result = root.eval()
-            check(False, "Did not catch an error that we should have caught")
-        except ValueError:
-            pass

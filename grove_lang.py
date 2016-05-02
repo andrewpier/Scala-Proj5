@@ -9,7 +9,7 @@ class Expr:
 
 class StringLiteral:
     def __init(self,name):
-        if not (" "  in name) and not("." is in name):
+        if not (" "  in name) and not("." in name):
             self.name = name
         else:
             raise GroveError("GROVE: Improper string literal")
@@ -30,8 +30,6 @@ class Name(Expr):
         return self.name
     
     def eval(self):
-        if(self.name == "quit" || self.name == "exit"):
-            return sys.exit()
         if self.name in var_table:
             return var_table[self.name]
         else:
@@ -44,15 +42,13 @@ class Method(Expr):
         self.keyWord = keyWord
         self.firstName = firstName
         self.secName = secName
-        self.arguments = *args
+        self.arguments = args
         
     def __eval__(self):
-         if self.firstName in var_table:
+        if self.firstName in var_table:
             methodList = [methodName for methodName in dir(self.firstName) if callable(getattr(self.firstName,methodName))]
             if self.secondName in methodList:
-                #Pretty sure this is what will evaluate the function based on the args we have been given
-                getattr(self.firstName.eval(),methodName.eval())(arguments)
-                #self.firstName.eval()
+                getattr(self.firstName.eval(),methodName.eval())(*arguments)
             else:
                 raise GroveError("GROVE: method " + str(self.secondName) + " is not defined for: " + str(self.firstName) )
         else:
@@ -70,8 +66,31 @@ class Addition(Expr):
             raise GroveError("GROVE: cannot add two different types type 1:" + str(type(self.child1)) + " type 2:" + str(type(self.child2)))
         else:
             return self.child1.eval() + self.child2.eval()
-    
-                                                     
+
+        
+        
+        
+        
+        
+class Call(Expr):
+    def __init__(self,child1,child2, child3):
+        self.name = child1
+        self.method = child2
+        self.args = child3
+        
+        if not isinstance(self.name, Name):
+            raise GroveError("GROVE: expected expression but recieved " + str(type(self.name)))
+        if not isinstance(self.method, Name):
+            raise GroveError("GROVE: expected expression but recieved " + str(type(self.method)))
+        
+        
+    def eval(self):
+        theFunction = getattr(var_table[self.name], self.method)
+        theFunction(*self.args)
+        
+        
+        
+        
     
             
 class Num(Expr):
@@ -86,32 +105,36 @@ class Num(Expr):
     
 class Stmt:
     # I think that we should use the *args here in order to be able to take 0, 1, 2 names
-    def __init__(self, *args):
+    def __init__(self, keyword, name, value):
         self.keyword = args[0]
-        self.args = args[1:]   
+        self.args = args[1:]
+        if not isinstance(self.args[0], Name):
+            raise GroveError("GROVE: expected expression but recieved " + str(type(self.args[0])))
+        
+            
         
     def eval(self):
-        if(self.keyword == "quit" || self.keyword == "exit"):
+        if(self.keyword == "quit" or self.keyword == "exit"):
             sys.exit()
         elif self.keyword == "import":
-            #put it into globals
-            mod = importlib.import_module(self.args[0])
-            setattr(globals(),mod, )
-            
+            module = importlib.import_module(self.args[0])
+            globals()[keyword] = module
+            #call = getattr(mod,)
+            #call()
         elif self.keyword == "set":
-            if(self.args.count >= 3):
-                #var_table[self.args[0].getName()] = new args[1].eval()
-                #we need to be able to . another name 
-                myClass = globals()[args[1]]()
-                myObj = getattr(myClass,self.args[2])
-                var_table[self.args[0].getName()] = myObj
+            if isinstance(self.args[1], Expr):
+                var_table[self.args[0].getName()] = self.args[1].eval()
             else:
-                myClass = globals()[args[1]]()
-                var_table[self.args[0].getName()] = myClass
+                #is they the value is expressions
+                if(self.args.count >= 3):
+                    #var_table[self.args[0].getName()] = new args[1].eval()
+                    #we need to be able to . another name 
+                    myClass = globals()[args[1]]()
+                    myObj = getattr(myClass,self.args[2])
+                    var_table[self.args[0].getName()] = myObj
+                else:
+                    myClass = globals()[args[1]]()
+                    var_table[self.args[0].getName()] = myClass  
+                
         else:
-            raise GroveError("GROVE: invalid keyword " + str(self.keyword))
-                                                     
-                                                     
-                                                     
-                                                     
-                                                     
+            raise GroveError("GROVE: invalid keyword " + str(self.keyword))  
