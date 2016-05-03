@@ -63,9 +63,17 @@ def parse_tokens(tokens):
         # "set" <Name> "=" "new" <Name>      | "set" <Name> "=" "new" <Name>"."<Name>
         (varName,tokens) = parse_tokens(tokens[1:])
         check(len(tokens) > 1)
-        expect(tokens[0], "=")
+     
+        nu = Num(1)
+        if(type(varName) == type(nu)):
+            raise GroveError("Grove-Parse: Invalid var name: " + str(varName.eval()))
+            
+        #check(type(varName) == type(Name))
         
+        expect(tokens[0], "=")
+
         if not tokens[1] == "new":
+            #check(tokens[1].isalpha)
             (esprName,tokens) = parse_tokens(tokens[1:])
             return (Stmt(start, varName, esprName), tokens)
 
@@ -119,8 +127,7 @@ def parse_tokens(tokens):
                 raise GroveError("Grove-Parse: invalid string literal quotes were found: " + str(start) )
             return (StringLiteral(start), tokens[1:]) # return string literal
         else:
-            
-            #check(start[0].isalpha() or start[0] == "_" )
+            check(start[0].isalpha() or start[0] == "_" )
             isValidName(start)
             return (Name(start), tokens[1:])#return name
         
