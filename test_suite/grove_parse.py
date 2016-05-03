@@ -89,7 +89,7 @@ def parse_tokens(tokens):
     
     elif start == "call":
         #"call" "(" <Name> <Name> <Expr>* ")" 
-            
+        check(len(tokens) > 1)
         expect(tokens[1],"(")
         
         (child1,tokens) = parse_tokens(tokens[2:])
@@ -112,8 +112,24 @@ def parse_tokens(tokens):
 
 
     else:
-        if start[0] == "\"":
+        if start[0] == "\"" :
+            if not start[len(start)-1] == "\"":
+                raise GroveError("Grove-Parse: Invalid String Literal: " + str(start) )
+            if "\"" in start[1:len(start)-2]:
+                raise GroveError("Grove-Parse: invalid string literal quotes were found: " + str(start) )
             return (StringLiteral(start), tokens[1:]) # return string literal
         else:
+            
+            #check(start[0].isalpha() or start[0] == "_" )
+            isValidName(start)
             return (Name(start), tokens[1:])#return name
+        
+        
+def isValidName(strs):
+    for s in strs:
+        if not s.isalnum(): 
+            if not s == "_":
+                raise GroveError("Grove-Parse: Name contains invalid character: " + str(strs))
+        
+            
         

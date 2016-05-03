@@ -11,7 +11,6 @@ class StringLiteral(Expr):
     def __init__(self,name):
         if not (" "  in name) and not ("." in name):
             newName = name.strip("\"")
-            #print(newName)
             self.name = newName        
         else:
             raise GroveError("GROVE-Eval: Improper string literal")       
@@ -36,7 +35,7 @@ class Name(Expr):
         if self.name in var_table:
             return var_table[self.name]
         else:
-            raise GroveError("GROVE-Eval: Name not in the var table")
+            raise GroveError("GROVE-Eval: Name not in the var table: " + str(self.name))
             
             
             
@@ -87,6 +86,12 @@ class Call(Expr):
             raise GroveError("GROVE-Eval: expected expression but recieved " + str(type(self.method)))
         
     def eval(self):
+        if not self.name.getName() in var_table:
+            raise GroveError("GROVE-Eval: variable not defined in var_table: " + str(self.name.getName()))
+        if not self.method.getName() in dir(var_table[self.name.getName()]):
+            print(dir(self.name.getName())) 
+            raise GroveError("GROVE-Eval: method not defined in var_table: " + str(self.method.getName()))
+            
         theFunction = getattr(var_table[self.name.getName()], self.method.getName())
         return theFunction(*self.args)
         
@@ -116,34 +121,39 @@ class Stmt:
             
         
     def eval(self):
-        #print(self.args[0])
-        #print(self.keyword.getName())
         if(self.keyword == "quit" or self.keyword == "exit"):
             sys.exit()
         elif self.keyword == "import":
-            module = importlib.import_module(self.args[0].getName())
-            globals()[self.args[0].getName()] = module
+            try:
+                module = importlib.import_module(self.args[0].getName())
+                globals()[self.args[0].getName()] = module
+            except:
+                raise GroveError("Grove-Eval: Import module not defined: " + str(self.args[0].getName()))
             
         elif self.keyword == "set":
             if not self.args[0] == "new":
                 var_table[self.args[0].getName()] = self.args[1].eval()
             else:
-                for arg in self.args:
-                    if isinstance(arg, Name):
-                        print(arg.getName())
-                    else:
-                        print(arg)
                 #is they the value is expressions
                 if(len(self.args) > 3):
                     #var_table[self.args[0].getName()] = new args[1].eval()
                     #we need to be able to . another name 
                     #varName, objName, methodName
+                    if not self.args[2].getName() in globals():
+                        raise GroveError("Grove-Eval: object does not exist in globals: " + str(self.args[2].getName()))
                     myClass = globals()[self.args[2].getName()]
+                    
+                    if not self.args[3].getName() in dir(globals()[self.args[2].getName()]):
+                        #print("this is a stupid error")
+                        raise GroveError("Grove-Eval: method of object does not exist: " + str(self.args[3].getName()))
+                        
                     myObj = getattr(myClass,self.args[3].getName())
-                    var_table[self.args[1].getName()] = myObj
+                    var_table[self.args[1].getName()] = myObj()
                 else:
+                    if not self.args[2].getName() in globals():
+                        raise GroveError("Grove-Eval: object does not exist in globals: " + str(self.args[2].getName()))
                     myClass = globals()[self.args[2].getName()]
-                    var_table[self.args[1].getName()] = myClass  
+                    var_table[self.args[1].getName()] = myClass()  
                 
         else:
             raise GroveError("GROVE-Eval: invalid keyword " + str(self.keyword))  
