@@ -4,7 +4,7 @@ exec(open("grove_lang.py").read())
 def check(condition, message = "Unexpected end of expression"):
     """ Checks if condition is true, raising a ValueError otherwise """
     if not condition:
-        raise ValueError("GROVE: " + message)
+        raise GroveError("GROVE-Parse: " + message)
         
 def expect(token, expected):
     """ Checks that token matches expected
@@ -40,9 +40,7 @@ def parse_tokens(tokens):
         (an object representing the next part of the expression,
          the remaining tokens)
     """
-    
     check(len(tokens) > 0)
-        
     start = tokens[0]
     
     # TODO: parse the next part of the expression
@@ -66,21 +64,24 @@ def parse_tokens(tokens):
         (varName,tokens) = parse_tokens(tokens[1:])
         check(len(tokens) > 1)
         expect(tokens[0], "=")
+        
         if not tokens[1] == "new":
-            (esprName,tokens) = parse_tokens(tokens[2:])
-            check(len(tokens) > 1)
-            return (Stmt(varName, esprName), tokens)
-        expect(tokens[1],"new")
-        (objName,tokens) = parse_tokens(tokens[2:])
-        if tokens[0] == ".":
-            (methodName,tokens) = parse_tokens(tokens[1:])
-            check(len(tokens) > 1)
-            return (Stmt("new", varName, objName, methodName), tokens)
+            (esprName,tokens) = parse_tokens(tokens[1:])
+            return (Stmt(start, varName, esprName), tokens)
+
+        
+        if "." in tokens[2]:
+            names = tokens[2]
+            myNames = names.split(".")
+            return (Stmt(start, "new", varName, Name(myNames[0]), Name(myNames[1])), tokens[3:])
         else:
-            return (Stmt("new", varName, objName), tokens)
+            return (Stmt(start, "new", varName, Name(tokens[2])), tokens[3:])
+        
+        
+        
         
     elif start == "quit" or start == "exit":
-        return (Stmt(start,Name("quit"),0),tokens[1:])
+        return (Stmt(start,"quit",0),tokens[1:])
     
     elif start == "import":
         (varname,tokens) = parse_tokens(tokens[1:]) # get the import name
@@ -88,26 +89,31 @@ def parse_tokens(tokens):
     
     elif start == "call":
         #"call" "(" <Name> <Name> <Expr>* ")" 
+            
         expect(tokens[1],"(")
+        
         (child1,tokens) = parse_tokens(tokens[2:])
         check(len(tokens) > 1)
+        
         (child2,tokens) = parse_tokens(tokens)
-        check(len(tokens) > 1)
+        check(len(tokens) > 0)
         
         myArgs = list()
-        
-        while tokens[1] != ")":
-            (child1,tokens) = parse_tokens(tokens[2:])
-            if not isinstance(child1, Expr):
+            
+        while tokens[0] != ")":
+            (child3,tokens) = parse_tokens(tokens)
+            if not isinstance(child3, Expr):
                 raise GroveError("Andrew Sucks!")
-            myArgs.append(child1)
+            myArgs.append(child3.eval())
         
-        expect(tokens[1],")")
+        expect(tokens[0],")")
    
-        return()
+        return(Call(child1,child2, *myArgs),tokens[1:])
+
+
     else:
-        if start == "\"":
-            return(StringLiteral(tokens[1],tokens[3:])) # return string literal
+        if start[0] == "\"":
+            return (StringLiteral(start), tokens[1:]) # return string literal
         else:
-            return(Name(start), tokens[1:])#return name
+            return (Name(start), tokens[1:])#return name
         
